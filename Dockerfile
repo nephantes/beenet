@@ -4,5 +4,5 @@ LABEL author="alper.kucukural@umassmed.edu"  description="Docker image containin
 RUN apt-get update --fix-missing && \
     apt-get install -y wget bzip2 ca-certificates curl git
     
-RUN wget --quiet https://bioinfo.umassmed.edu/pub/beenet && \
-    chmod 755 beenet && mv beenet /usr/bin/. 
+RUN wget https://bioinfo.umassmed.edu/pub/beenet 
+RUN chmod 755 beenet && mv beenet /usr/bin/. 

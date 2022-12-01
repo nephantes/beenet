@@ -12,45 +12,16 @@ ch_empty_file_1 = file("$baseDir/.emptyfiles/NO_FILE_1", hidden:true)
 
 g_3_custom_fasta2_g_2 = params.custom_fastq_file && file(params.custom_fastq_file, type: 'any').exists() ? file(params.custom_fastq_file, type: 'any') : ch_empty_file_1
 Channel.value(params.Ref).set{g_4_ref_flat0_g_1}
-Channel.fromPath(params.reads, type: 'any').map{ file -> tuple(file.baseName, file) }.set{g_6_reads1_g_5}
-Channel.value(params.barcode_num).set{g_7_barcode2_g_5}
-Channel.value(params.params).set{g_8_params3_g_5}
+g_6_reads2_g_5 = file(params.reads, type: 'any')
+Channel.value(params.barcode_num).set{g_7_barcode3_g_5}
+Channel.value(params.params).set{g_8_params4_g_5}
 
-//* params.gtf =  ""  //* @input
-//* params.genome =  ""  //* @input
-//* params.commondb =  ""  //* @input
-//* params.genome_source =  ""  //* @input
-//* params.gtf_source =  ""  //* @input
-//* params.commondb_source =  ""  //* @input @optional
-
-def downFile(path, task){
-    if (path.take(1).indexOf("/") == 0){
-      target=path
-      if (task.executor == "awsbatch") {
-      	a=file(path)
-    	fname = a.getName().toString()
-    	target = "${workDir}/${fname}"
-    	if (!file(target).exists()){
-    		a.copyTo(workDir)
-    	}
-      }
-    } else {
-      a=file(path)
-      fname = a.getName().toString()
-      target = "${workDir}/${fname}"
-      if (!file(target).exists()){
-    		a.copyTo(workDir)
-      } 
-    }
-    return target
-}
-
-def getLastName (str){
-	if (str.indexOf("/") > -1){
-		return  str.substring(str.lastIndexOf('/')+1,str.length())
-	} 
-	return ""
-}
+genome_dir="/nl/umw_biocore/ref/"
+if (!(params.run_Download_Genomic_Sources == "yes")){
+g_4_ref_flat0_g_1.set{g_1_ref_flat21_g_5}
+g_1_genome00_g_2 = Channel.empty()
+g_1_gtfFile11_g_2 = Channel.empty()
+} else {
 
 process Check_Genome_GTF {
 
@@ -60,6 +31,7 @@ input:
 output:
  file "${genomeName}"  into g_1_genome00_g_2
  file "${gtfName}"  into g_1_gtfFile11_g_2
+ val "${ref}"  into g_1_ref_flat21_g_5
 
 when:
 params.run_Download_Genomic_Sources == "yes"
@@ -67,13 +39,14 @@ params.run_Download_Genomic_Sources == "yes"
 script:
 """
 beenet download-ref ${ref}
-mv ${ref} ${genome_dir}
 """
 
 
 
 
 }
+}
+
 
 
 
@@ -155,28 +128,37 @@ input:
 output:
  val ref  into g_0_ref_flat00_g_5
 
+when:
+params.add_sequences_to_reference == "yes"
+
+script:
 """
 #!/bin/sh 
 beenet make-ref ${genome} ${gtf}
 """
 }
 
+g_0_ref_flat00_g_5= g_0_ref_flat00_g_5.ifEmpty("") 
+
 
 process Analyze {
 
 publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /out\/.*$/) "Report/$filename"}
 input:
- val ref from g_0_ref_flat00_g_5
- set val(name),file(reads) from g_6_reads1_g_5
- val num_barcodes from g_7_barcode2_g_5
- val params from g_8_params3_g_5
+ val custom_ref from g_0_ref_flat00_g_5
+ val ref from g_1_ref_flat21_g_5
+ file val(name),file(reads) from g_6_reads2_g_5
+ val num_barcodes from g_7_barcode3_g_5
+ val params from g_8_params4_g_5
 
 output:
  file "out/*"  into g_5_outputDir00
 
-"""
-#shell example: 
+script:
+println custom_ref
+ref = custom_ref ? custom_ref : ref
 
+"""
 #!/bin/sh 
 mkdir -p out
 beenet analyze --sample-name=${name} --ref=${ref} --num-barcodes=${num_barcodes} ${params} --out=out

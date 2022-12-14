@@ -7,4 +7,4 @@ RUN apt-get update --fix-missing && \
 RUN wget --cipher 'DEFAULT:!DH' https://bioinfo.umassmed.edu/pub/beenet 
 RUN wget --cipher 'DEFAULT:!DH' https://bioinfo.umassmed.edu/pub/STAR
 RUN chmod 755 beenet && mv beenet /usr/bin/. 
-RUN chmod 755 beenet && mv STAR /usr/bin/. 
+RUN chmod 755 STAR && mv STAR /usr/bin/. 
